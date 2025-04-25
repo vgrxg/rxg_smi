@@ -181,13 +181,34 @@ class RXG_SMI_Admin {
         include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-dashboard.php';
     }
 
+
     /**
      * Affiche la liste des pages
      */
     public function display_plugin_pages() {
-        // Récupérer les pages depuis la base de données
-        $pages = $this->db->get_pages();
+        global $wpdb;
         
+        // Récupérer les paramètres de filtrage
+        $post_type = isset($_GET['post_type']) ? sanitize_text_field($_GET['post_type']) : '';
+        $orderby = isset($_GET['orderby']) ? sanitize_text_field($_GET['orderby']) : 'juice_score';
+        $order = isset($_GET['order']) ? sanitize_text_field($_GET['order']) : 'DESC';
+        $min_depth = isset($_GET['min_depth']) ? intval($_GET['min_depth']) : '';
+        $max_depth = isset($_GET['max_depth']) ? intval($_GET['max_depth']) : '';
+        
+        // Configurer les arguments
+        $args = array(
+            'post_type' => $post_type,
+            'orderby' => $orderby,
+            'order' => $order,
+            'min_depth' => $min_depth,
+            'max_depth' => $max_depth,
+            'limit' => 50
+        );
+        
+        // Récupérer les pages depuis la base de données
+        $pages = $this->db->get_pages($args);
+        
+        // Inclure le template
         include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-pages.php';
     }
 

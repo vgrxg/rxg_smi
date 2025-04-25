@@ -2,6 +2,18 @@
 /**
  * Template pour la liste des pages
  */
+
+// Afficher toutes les erreurs (à retirer après débogage)
+ini_set('display_errors', 1);
+ini_set('display_startup_errors', 1);
+error_reporting(E_ALL);
+
+// Par défaut en cas de variables non définies
+$pages = isset($pages) ? $pages : array();
+$post_type = isset($post_type) ? $post_type : '';
+$orderby = isset($orderby) ? $orderby : 'juice_score';
+$order = isset($order) ? $order : 'DESC';
+
 ?>
 <div class="wrap rxg-smi-wrap">
     <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
