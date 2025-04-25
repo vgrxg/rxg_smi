@@ -261,7 +261,10 @@
                     <h4><?php _e('Pages sans sortie', 'rxg-smi'); ?></h4>
                     <p class="rxg-smi-big-number">
                         <?php 
-                        $no_outlinks = $wpdb->get_var("SELECT COUNT(*) FROM $table_pages WHERE outbound_links_count = 0");
+                    // Cette variable sera déjà définie dans class-rxg-smi-admin.php
+                    if (!isset($no_outlinks)) {
+                        $no_outlinks = 0;
+                    }                        
                         echo intval($no_outlinks);
                         ?>
                     </p>

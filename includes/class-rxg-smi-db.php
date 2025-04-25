@@ -313,6 +313,44 @@ class RXG_SMI_DB {
         );
     }
 
+
+
+/**
+ * Récupère les liens d'une page spécifique
+ * 
+ * @param int $page_id ID de la page
+ * @param string $direction Direction des liens (outbound/inbound)
+ * @return array Tableau des liens
+ */
+public function get_page_links($page_id, $direction = 'outbound') {
+    global $wpdb;
+    
+    if ($direction === 'outbound') {
+        // Liens sortants de cette page
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM $this->table_links 
+                WHERE source_id = %d 
+                ORDER BY external ASC, section ASC, position ASC",
+                $page_id
+            )
+        );
+    } else {
+        // Liens entrants vers cette page
+        return $wpdb->get_results(
+            $wpdb->prepare(
+                "SELECT * FROM $this->table_links 
+                WHERE target_id = %d 
+                ORDER BY section ASC, position ASC",
+                $page_id
+            )
+        );
+    }
+}
+
+
+
+
     /**
      * Récupère les pages par taxonomie
      */

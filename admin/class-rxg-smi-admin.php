@@ -127,6 +127,57 @@ class RXG_SMI_Admin {
      * Affiche le tableau de bord principal
      */
     public function display_plugin_admin_dashboard() {
+        global $wpdb;
+        
+        // Tables
+        $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+        $table_links = $wpdb->prefix . 'rxg_smi_links';
+        $table_terms = $wpdb->prefix . 'rxg_smi_page_terms';
+        
+        // Récupérer les statistiques de base
+        $page_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_pages");
+        $link_count = $wpdb->get_var("SELECT COUNT(*) FROM $table_links");
+        $internal_links = $wpdb->get_var("SELECT COUNT(*) FROM $table_links WHERE external = 0");
+        $external_links = $wpdb->get_var("SELECT COUNT(*) FROM $table_links WHERE external = 1");
+
+        // Pages sans liens sortants
+        $no_outlinks = $wpdb->get_var("SELECT COUNT(*) FROM $table_pages WHERE outbound_links_count = 0");
+        
+        // Dernière analyse
+        $last_analyzed = $wpdb->get_var("SELECT MAX(last_crawled) FROM $table_pages");
+        
+        // Pages orphelines (sans liens entrants)
+        $orphan_pages = $wpdb->get_var("SELECT COUNT(*) FROM $table_pages WHERE inbound_links_count = 0");
+                
+        // Profondeur maximale
+        $max_depth = $wpdb->get_var("SELECT MAX(depth) FROM $table_pages");
+        
+        // Statistiques des taxonomies
+        $taxonomies_count = $wpdb->get_var("SELECT COUNT(DISTINCT taxonomy) FROM $table_terms");
+        $terms_count = $wpdb->get_var("SELECT COUNT(DISTINCT term_id) FROM $table_terms");
+        
+        // Pages les plus liées
+        $top_pages = $wpdb->get_results("
+            SELECT id, title, inbound_links_count, outbound_links_count, depth 
+            FROM $table_pages 
+            ORDER BY inbound_links_count DESC 
+            LIMIT 10
+        ");
+        
+        // Textes d'ancre les plus utilisés
+        $top_anchors = $wpdb->get_results("
+            SELECT anchor_text, COUNT(*) as count
+            FROM $table_links
+            WHERE anchor_text != ''
+            GROUP BY anchor_text
+            ORDER BY count DESC
+            LIMIT 10
+        ");
+        
+        // Clusters taxonomiques (simplifié)
+        $taxonomy_clusters = array(); // À implémenter complètement si nécessaire
+        
+        // Inclure le template
         include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-dashboard.php';
     }
 
