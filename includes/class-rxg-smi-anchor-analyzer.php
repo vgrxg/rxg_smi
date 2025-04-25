@@ -300,7 +300,7 @@ class RXG_SMI_Anchor_Analyzer {
         return !empty($similar_pairs) ? $similar_pairs : false;
     }
     
-
+/*
  * Calcule la similarité entre deux textes (algorithme de Levenshtein simple)
  */
 public function calculate_text_similarity($text1, $text2) {
