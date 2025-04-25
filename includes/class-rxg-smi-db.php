@@ -165,6 +165,68 @@ class RXG_SMI_DB {
         $this->create_tables();
     }
 
+
+
+    /**
+     * Met à jour les compteurs de liens pour une page
+     */
+    public function update_link_counts($page_id) {
+        global $wpdb;
+        
+        // Compter les liens sortants
+        $outbound_count = $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM $this->table_links WHERE source_id = %d", $page_id)
+        );
+        
+        // Compter les liens entrants
+        $inbound_count = $wpdb->get_var(
+            $wpdb->prepare("SELECT COUNT(*) FROM $this->table_links WHERE target_id = %d", $page_id)
+        );
+        
+        // Mettre à jour les compteurs
+        $wpdb->update(
+            $this->table_pages,
+            array(
+                'outbound_links_count' => $outbound_count,
+                'inbound_links_count' => $inbound_count
+            ),
+            array('id' => $page_id)
+        );
+    }
+
+
+
+    /**
+     * Sauvegarde les données d'un lien
+     */
+    public function save_link($link_data) {
+        global $wpdb;
+        
+        // Vérifier si le lien existe déjà
+        $existing_link = $wpdb->get_row(
+            $wpdb->prepare(
+                "SELECT id FROM $this->table_links WHERE source_id = %d AND target_url = %s",
+                $link_data['source_id'],
+                $link_data['target_url']
+            )
+        );
+        
+        if ($existing_link) {
+            // Mise à jour
+            $wpdb->update(
+                $this->table_links,
+                $link_data,
+                array('id' => $existing_link->id)
+            );
+            return $existing_link->id;
+        } else {
+            // Insertion
+            $wpdb->insert($this->table_links, $link_data);
+            return $wpdb->insert_id;
+        }
+    }
+
+
     /**
      * Sauvegarde les données d'une page avec les nouveaux champs
      */
