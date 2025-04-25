@@ -185,98 +185,98 @@ class RXG_SMI_Admin {
 /**
  * Ajoute les menus d'administration complets
  */
-public function add_plugin_admin_menu() {
-    // Menu principal
-    add_menu_page(
-        __('RXG Maillage Interne', 'rxg-smi'),
-        __('Maillage Interne', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi',
-        array($this, 'display_plugin_admin_dashboard'),
-        'dashicons-networking',
-        100
-    );
+// public function add_plugin_admin_menu() {
+//     // Menu principal
+//     add_menu_page(
+//         __('RXG Maillage Interne', 'rxg-smi'),
+//         __('Maillage Interne', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi',
+//         array($this, 'display_plugin_admin_dashboard'),
+//         'dashicons-networking',
+//         100
+//     );
     
-    // Sous-menu: Tableau de bord
-    add_submenu_page(
-        'rxg-smi',
-        __('Tableau de bord', 'rxg-smi'),
-        __('Tableau de bord', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi',
-        array($this, 'display_plugin_admin_dashboard')
-    );
+//     // Sous-menu: Tableau de bord
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Tableau de bord', 'rxg-smi'),
+//         __('Tableau de bord', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi',
+//         array($this, 'display_plugin_admin_dashboard')
+//     );
     
-    // Sous-menu: Pages
-    add_submenu_page(
-        'rxg-smi',
-        __('Pages', 'rxg-smi'),
-        __('Pages', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-pages',
-        array($this, 'display_plugin_pages')
-    );
+//     // Sous-menu: Pages
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Pages', 'rxg-smi'),
+//         __('Pages', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-pages',
+//         array($this, 'display_plugin_pages')
+//     );
     
-    // Sous-menu: Liens
-    add_submenu_page(
-        'rxg-smi',
-        __('Liens', 'rxg-smi'),
-        __('Liens', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-links',
-        array($this, 'display_plugin_links')
-    );
+//     // Sous-menu: Liens
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Liens', 'rxg-smi'),
+//         __('Liens', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-links',
+//         array($this, 'display_plugin_links')
+//     );
     
-    // Sous-menu: Hiérarchie (Nouveau)
-    add_submenu_page(
-        'rxg-smi',
-        __('Hiérarchie', 'rxg-smi'),
-        __('Hiérarchie', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-hierarchy',
-        array($this, 'display_plugin_hierarchy')
-    );
+//     // Sous-menu: Hiérarchie (Nouveau)
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Hiérarchie', 'rxg-smi'),
+//         __('Hiérarchie', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-hierarchy',
+//         array($this, 'display_plugin_hierarchy')
+//     );
     
-    // Sous-menu: Taxonomies (Nouveau)
-    add_submenu_page(
-        'rxg-smi',
-        __('Taxonomies', 'rxg-smi'),
-        __('Taxonomies', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-taxonomies',
-        array($this, 'display_plugin_taxonomies')
-    );
+//     // Sous-menu: Taxonomies (Nouveau)
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Taxonomies', 'rxg-smi'),
+//         __('Taxonomies', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-taxonomies',
+//         array($this, 'display_plugin_taxonomies')
+//     );
     
-    // Sous-menu: Ancres (Nouveau)
-    add_submenu_page(
-        'rxg-smi',
-        __('Textes d\'ancre', 'rxg-smi'),
-        __('Textes d\'ancre', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-anchors',
-        array($this, 'display_plugin_anchors')
-    );
+//     // Sous-menu: Ancres (Nouveau)
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Textes d\'ancre', 'rxg-smi'),
+//         __('Textes d\'ancre', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-anchors',
+//         array($this, 'display_plugin_anchors')
+//     );
     
-    // Sous-menu: Opportunités (Nouveau)
-    add_submenu_page(
-        'rxg-smi',
-        __('Opportunités', 'rxg-smi'),
-        __('Opportunités', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-opportunities',
-        array($this, 'display_plugin_opportunities')
-    );
+//     // Sous-menu: Opportunités (Nouveau)
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Opportunités', 'rxg-smi'),
+//         __('Opportunités', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-opportunities',
+//         array($this, 'display_plugin_opportunities')
+//     );
     
-    // Sous-menu: Paramètres
-    add_submenu_page(
-        'rxg-smi',
-        __('Paramètres', 'rxg-smi'),
-        __('Paramètres', 'rxg-smi'),
-        'manage_options',
-        'rxg-smi-settings',
-        array($this, 'display_plugin_settings')
-    );
-}
+//     // Sous-menu: Paramètres
+//     add_submenu_page(
+//         'rxg-smi',
+//         __('Paramètres', 'rxg-smi'),
+//         __('Paramètres', 'rxg-smi'),
+//         'manage_options',
+//         'rxg-smi-settings',
+//         array($this, 'display_plugin_settings')
+//     );
+// }
 
     /**
      * Affiche la liste des pages
