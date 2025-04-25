@@ -300,34 +300,34 @@ class RXG_SMI_Anchor_Analyzer {
         return !empty($similar_pairs) ? $similar_pairs : false;
     }
     
-    /**
-     * Calcule la similarité entre deux textes (algorithme de Levenshtein simple)
-     */
-    private function calculate_text_similarity($text1, $text2) {
-        $text1 = strtolower(trim($text1));
-        $text2 = strtolower(trim($text2));
-        
-        // Si l'un des textes est vide, la similarité est 0
-        if (empty($text1) || empty($text2)) {
-            return 0;
-        }
-        
-        // Si les textes sont identiques, la similarité est 100%
-        if ($text1 === $text2) {
-            return 100;
-        }
-        
-        // Calculer la distance de Levenshtein
-        $lev_distance = levenshtein($text1, $text2);
-        
-        // Calculer la longueur maximale des deux textes
-        $max_length = max(mb_strlen($text1), mb_strlen($text2));
-        
-        // Calculer la similarité en pourcentage
-        $similarity = (1 - ($lev_distance / $max_length)) * 100;
-        
-        return round($similarity);
+
+ * Calcule la similarité entre deux textes (algorithme de Levenshtein simple)
+ */
+public function calculate_text_similarity($text1, $text2) {
+    $text1 = strtolower(trim($text1));
+    $text2 = strtolower(trim($text2));
+    
+    // Si l'un des textes est vide, la similarité est 0
+    if (empty($text1) || empty($text2)) {
+        return 0;
     }
+    
+    // Si les textes sont identiques, la similarité est 100%
+    if ($text1 === $text2) {
+        return 100;
+    }
+    
+    // Calculer la distance de Levenshtein
+    $lev_distance = levenshtein($text1, $text2);
+    
+    // Calculer la longueur maximale des deux textes
+    $max_length = max(mb_strlen($text1), mb_strlen($text2));
+    
+    // Calculer la similarité en pourcentage
+    $similarity = (1 - ($lev_distance / $max_length)) * 100;
+    
+    return round($similarity);
+}
     
     /**
      * Récupère les statistiques détaillées d'ancre pour une page

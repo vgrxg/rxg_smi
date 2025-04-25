@@ -31,6 +31,7 @@ require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-crawler.php';
 require_once RXG_SMI_PLUGIN_DIR . 'admin/class-rxg-smi-admin.php';
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-ajax.php';
 
+
 /**
  * Démarre le plugin
  */
@@ -71,7 +72,6 @@ function rxg_smi_init() {
     
     add_action('rxg_smi_daily_analysis', array($crawler, 'analyze_site'));
 }
-
 /**
  * Fonction exécutée lors de l'activation du plugin
  */

@@ -26,6 +26,158 @@ class RXG_SMI_Hierarchy_Analyzer {
         $this->db = $db;
     }
     
+
+
+/**
+ * Affiche la visualisation de la hiérarchie des pages
+ */
+public function display_plugin_hierarchy() {
+    global $wpdb;
+    
+    // Tables
+    $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+    
+    // Récupérer les statistiques
+    $max_depth = $this->hierarchy_analyzer->get_max_depth();
+    $orphan_pages = $this->hierarchy_analyzer->get_orphan_pages();
+    
+    // Arbre hiérarchique
+    $tree = $this->hierarchy_analyzer->build_page_tree();
+    
+    // Inclure le template
+    include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-hierarchy.php';
+}
+
+/**
+ * Affiche la visualisation des taxonomies
+ */
+public function display_plugin_taxonomies() {
+    global $wpdb;
+    
+    // Récupérer la taxonomie demandée
+    $taxonomy = isset($_GET['taxonomy']) ? sanitize_text_field($_GET['taxonomy']) : 'category';
+    $term_id = isset($_GET['term_id']) ? intval($_GET['term_id']) : 0;
+    
+    // Récupérer toutes les taxonomies
+    $taxonomies = $this->db->get_taxonomies();
+    
+    // Utiliser la première taxonomie si aucune n'est spécifiée
+    if (empty($taxonomies)) {
+        echo '<div class="notice notice-warning"><p>' . __('Aucune taxonomie trouvée. Veuillez analyser le site.', 'rxg-smi') . '</p></div>';
+        return;
+    }
+    
+    if (empty($taxonomy) && !empty($taxonomies)) {
+        $taxonomy = $taxonomies[0];
+    }
+    
+    // Récupérer les termes de cette taxonomie
+    $terms = $this->db->get_terms_by_taxonomy($taxonomy);
+    
+    // Récupérer les pages pour un terme spécifique
+    $term_pages = array();
+    if ($term_id > 0) {
+        $term_pages = $this->db->get_pages_by_taxonomy($taxonomy, $term_id);
+    }
+    
+    // Inclure le template
+    include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-taxonomies.php';
+}
+
+/**
+ * Affiche l'analyse des textes d'ancre
+ */
+public function display_plugin_anchors() {
+    global $wpdb;
+    
+    // Récupérer les statistiques d'ancre
+    $table_anchors = $wpdb->prefix . 'rxg_smi_anchor_stats';
+    
+    // Récupérer les ancres les plus utilisées
+    $top_anchors = $this->db->get_top_anchors(20);
+    
+    // Récupérer les pages avec une faible diversité d'ancres
+    $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+    $low_diversity_pages = $wpdb->get_results("
+        SELECT * FROM $table_pages 
+        WHERE inbound_links_count > 1 AND anchor_diversity_score < 50 
+        ORDER BY anchor_diversity_score ASC 
+        LIMIT 10
+    ");
+    
+    // Récupérer les paires d'ancres similaires
+    $similar_anchors = array();
+    foreach ($top_anchors as $anchor1) {
+        foreach ($top_anchors as $anchor2) {
+            if ($anchor1->anchor_text != $anchor2->anchor_text) {
+                $similarity = $this->anchor_analyzer->calculate_text_similarity($anchor1->anchor_text, $anchor2->anchor_text);
+                
+                if ($similarity > 80) {
+                    $similar_anchors[] = array(
+                        'anchor1' => $anchor1->anchor_text,
+                        'anchor2' => $anchor2->anchor_text,
+                        'count1' => $anchor1->total_count,
+                        'count2' => $anchor2->total_count,
+                        'similarity' => $similarity
+                    );
+                }
+            }
+        }
+    }
+    
+    // Inclure le template
+    include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-anchors.php';
+}
+
+    /**
+     * Affiche les opportunités de maillage interne
+     */
+    public function display_plugin_opportunities() {
+        global $wpdb;
+        
+        // Vérifier si une page spécifique est demandée
+        $page_id = isset($_GET['page_id']) ? intval($_GET['page_id']) : 0;
+        
+        if ($page_id > 0) {
+            // Récupérer les détails de la page
+            $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+            $page_details = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_pages WHERE id = %d", $page_id));
+            
+            // Générer des suggestions
+            $taxonomy_suggestions = $this->taxonomy_analyzer->get_taxonomy_suggestions($page_id);
+            $potential_links = $this->taxonomy_analyzer->get_potential_links($page_id);
+            $suggested_anchors = $this->anchor_analyzer->generate_anchor_suggestions($page_id);
+            
+            // Inclure le template
+            include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-opportunities.php';
+        } else {
+            // Liste des opportunités générales
+            $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+            
+            // Pages orphelines
+            $orphan_pages = $this->hierarchy_analyzer->get_orphan_pages();
+            
+            // Pages sans liens sortants
+            $no_outbound_pages = $wpdb->get_results("
+                SELECT * FROM $table_pages 
+                WHERE outbound_links_count = 0 
+                ORDER BY juice_score DESC
+            ");
+            
+            // Pages avec ratio mots/liens élevé
+            $high_ratio_pages = $wpdb->get_results("
+                SELECT * FROM $table_pages 
+                WHERE word_count > 500 AND outbound_links_count > 0 AND word_link_ratio > 300 
+                ORDER BY word_link_ratio DESC 
+                LIMIT 10
+            ");
+            
+            // Inclure le template
+            include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-opportunities.php';
+        }
+    }
+
+    
     /**
      * Analyse la hiérarchie de toutes les pages indexées
      */
