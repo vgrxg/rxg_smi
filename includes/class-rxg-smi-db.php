@@ -121,12 +121,53 @@ class RXG_SMI_DB {
             KEY page_id (page_id)
         ) $charset_collate;";
 
+
+
+        // Table des termes sémantiques
+        $sql_semantic_terms = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}rxg_smi_semantic_terms (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            page_id bigint(20) NOT NULL,
+            term varchar(100) NOT NULL,
+            count int(11) NOT NULL DEFAULT 0,
+            weight float NOT NULL DEFAULT 0,
+            PRIMARY KEY  (id),
+            KEY page_id (page_id),
+            KEY term (term(50))
+        ) $charset_collate;";
+
+        // Table des similarités sémantiques
+        $sql_semantic_similarities = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}rxg_smi_semantic_similarities (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            page_id_1 bigint(20) NOT NULL,
+            page_id_2 bigint(20) NOT NULL,
+            similarity float NOT NULL DEFAULT 0,
+            PRIMARY KEY  (id),
+            UNIQUE KEY page_pair (page_id_1,page_id_2),
+            KEY page_id_1 (page_id_1),
+            KEY page_id_2 (page_id_2)
+        ) $charset_collate;";
+        
+        // Table des clusters sémantiques
+        $sql_semantic_clusters = "CREATE TABLE IF NOT EXISTS {$wpdb->prefix}rxg_smi_semantic_clusters (
+            id bigint(20) NOT NULL AUTO_INCREMENT,
+            cluster_id int(11) NOT NULL,
+            page_id bigint(20) NOT NULL,
+            cluster_score float NOT NULL DEFAULT 0,
+            PRIMARY KEY  (id),
+            UNIQUE KEY page_cluster (page_id,cluster_id),
+            KEY cluster_id (cluster_id),
+            KEY page_id (page_id)
+        ) $charset_collate;";
+
         // Utilisation de dbDelta pour créer ou mettre à jour les tables
         require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
         dbDelta($sql_pages);
         dbDelta($sql_links);
         dbDelta($sql_terms);
         dbDelta($sql_anchors);
+        dbDelta($sql_semantic_terms);
+        dbDelta($sql_semantic_similarities);
+        dbDelta($sql_semantic_clusters);
     }
 
     /**
@@ -161,8 +202,15 @@ class RXG_SMI_DB {
             $wpdb->query("ALTER TABLE {$this->table_links} ADD INDEX (section)");
         }
         
-        // Créer les nouvelles tables si elles n'existent pas
-        $this->create_tables();
+        $table_semantic_terms = $wpdb->prefix . 'rxg_smi_semantic_terms';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_semantic_terms'") === $table_semantic_terms;
+        
+        if (!$table_exists) {
+            // Créer les tables manquantes
+            $this->create_tables();
+        }
+
+
     }
 
 

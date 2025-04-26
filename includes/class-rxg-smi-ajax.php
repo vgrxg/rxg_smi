@@ -34,10 +34,11 @@ class RXG_SMI_Ajax_Handler {
     /**
      * Constructeur
      */
-    public function __construct($db, $taxonomy_analyzer, $anchor_analyzer) {
+    public function __construct($db, $taxonomy_analyzer, $anchor_analyzer, $semantic_analyzer = null) {
         $this->db = $db;
         $this->taxonomy_analyzer = $taxonomy_analyzer;
         $this->anchor_analyzer = $anchor_analyzer;
+        $this->semantic_analyzer = $semantic_analyzer;
         
         // Enregistrement des actions AJAX
         add_action('wp_ajax_rxg_smi_get_terms', array($this, 'ajax_get_terms'));
@@ -45,6 +46,32 @@ class RXG_SMI_Ajax_Handler {
         add_action('wp_ajax_rxg_smi_get_potential_links', array($this, 'ajax_get_potential_links'));
         add_action('wp_ajax_rxg_smi_get_page_anchors', array($this, 'ajax_get_page_anchors'));
         add_action('wp_ajax_rxg_smi_check_anchor_usage', array($this, 'ajax_check_anchor_usage'));
+        
+        // Nouvelle action AJAX pour l'analyse sémantique
+        if ($this->semantic_analyzer) {
+            add_action('wp_ajax_rxg_smi_get_semantic_suggestions', array($this, 'ajax_get_semantic_suggestions'));
+        }
+    }
+
+    /**
+     * AJAX: Récupère les suggestions de liens sémantiques
+     */
+    public function ajax_get_semantic_suggestions() {
+        $this->verify_ajax_nonce();
+        
+        $page_id = isset($_POST['page_id']) ? intval($_POST['page_id']) : 0;
+        
+        if (empty($page_id) || !$this->semantic_analyzer) {
+            wp_send_json_error(array('message' => __('Paramètres invalides ou analyseur non disponible', 'rxg-smi')));
+        }
+        
+        $suggestions = $this->semantic_analyzer->get_semantic_link_suggestions($page_id);
+        $terms = $this->semantic_analyzer->get_page_top_terms($page_id, 5);
+        
+        wp_send_json_success(array(
+            'suggestions' => $suggestions,
+            'terms' => $terms
+        ));
     }
     
     /**
@@ -155,12 +182,15 @@ class RXG_SMI_Ajax_Handler {
     }
 }
 
+
+
+
 /**
  * Initialisation du gestionnaire AJAX
  * 
  * Cette fonction doit être appelée après que les classes
  * de base de données et d'analyse sont initialisées.
  */
-function rxg_smi_init_ajax_handler($db, $taxonomy_analyzer, $anchor_analyzer) {
-    new RXG_SMI_Ajax_Handler($db, $taxonomy_analyzer, $anchor_analyzer);
+function rxg_smi_init_ajax_handler($db, $taxonomy_analyzer, $anchor_analyzer, $semantic_analyzer = null) {
+    new RXG_SMI_Ajax_Handler($db, $taxonomy_analyzer, $anchor_analyzer, $semantic_analyzer);
 }

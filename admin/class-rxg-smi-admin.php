@@ -13,18 +13,51 @@ class RXG_SMI_Admin {
      * Instance de la base de données
      */
     protected $db;
+    
+    /**
+     * Instance de l'analyseur de hiérarchie
+     */
+    protected $hierarchy_analyzer;
+    
+    /**
+     * Instance de l'analyseur de taxonomies
+     */
+    protected $taxonomy_analyzer;
+    
+    /**
+     * Instance de l'analyseur d'ancres
+     */
+    protected $anchor_analyzer;
+    
+    /**
+     * Instance de l'analyseur de contenu
+     */
+    protected $content_analyzer;
+    
+    /**
+     * Instance de l'analyseur sémantique
+     */
+    protected $semantic_analyzer;
 
     /**
      * Constructeur
      */
-    public function __construct($crawler, $db) {
+    public function __construct($crawler, $db, $hierarchy_analyzer = null, $taxonomy_analyzer = null, $anchor_analyzer = null, $content_analyzer = null, $semantic_analyzer = null) {
         $this->crawler = $crawler;
         $this->db = $db;
+        $this->hierarchy_analyzer = $hierarchy_analyzer;
+        $this->taxonomy_analyzer = $taxonomy_analyzer;
+        $this->anchor_analyzer = $anchor_analyzer;
+        $this->content_analyzer = $content_analyzer;
+        $this->semantic_analyzer = $semantic_analyzer;
     }
 
     /**
      * Ajoute les menus d'administration
      */
+/**
+ * Ajoute les menus d'administration
+ */
     public function add_plugin_admin_menu() {
         // Menu principal
         add_menu_page(
@@ -67,6 +100,18 @@ class RXG_SMI_Admin {
             array($this, 'display_plugin_links')
         );
         
+        // Sous-menu: Analyse Sémantique
+        if ($this->semantic_analyzer) {
+            add_submenu_page(
+                'rxg-smi',
+                __('Analyse Sémantique', 'rxg-smi'),
+                __('Analyse Sémantique', 'rxg-smi'),
+                'manage_options',
+                'rxg-smi-semantic',
+                array($this, 'display_semantic_analysis')
+            );
+        }
+        
         // Sous-menu: Paramètres
         add_submenu_page(
             'rxg-smi',
@@ -77,6 +122,7 @@ class RXG_SMI_Admin {
             array($this, 'display_plugin_settings')
         );
     }
+
 
     /**
      * Enregistre les styles d'administration
@@ -182,101 +228,94 @@ class RXG_SMI_Admin {
     }
 
 
+
+
 /**
- * Ajoute les menus d'administration complets
+ * Affiche l'interface d'analyse sémantique
  */
-// public function add_plugin_admin_menu() {
-//     // Menu principal
-//     add_menu_page(
-//         __('RXG Maillage Interne', 'rxg-smi'),
-//         __('Maillage Interne', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi',
-//         array($this, 'display_plugin_admin_dashboard'),
-//         'dashicons-networking',
-//         100
-//     );
+public function display_semantic_analysis() {
+    $page_id = isset($_GET['page_id']) ? intval($_GET['page_id']) : 0;
     
-//     // Sous-menu: Tableau de bord
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Tableau de bord', 'rxg-smi'),
-//         __('Tableau de bord', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi',
-//         array($this, 'display_plugin_admin_dashboard')
-//     );
+    if ($page_id > 0) {
+        // Récupérer les détails de la page
+        global $wpdb;
+        $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+        $page_details = $wpdb->get_row($wpdb->prepare("SELECT * FROM $table_pages WHERE id = %d", $page_id));
+        
+        if ($page_details) {
+            // Récupérer les termes sémantiques
+            $semantic_terms = $this->semantic_analyzer->get_page_top_terms($page_id);
+            
+            // Récupérer les suggestions de liens sémantiques
+            $semantic_links = $this->semantic_analyzer->get_semantic_link_suggestions($page_id);
+            
+            // Récupérer la carte thématique
+            $thematic_map = $this->semantic_analyzer->get_page_thematic_map($page_id);
+            
+            // Inclure le template
+            include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-semantic-page.php';
+        } else {
+            echo '<div class="notice notice-error"><p>' . __('Page non trouvée.', 'rxg-smi') . '</p></div>';
+        }
+    } else {
+        // Récupérer les opportunités globales
+        global $wpdb;
+        $table_semantic_similarities = $wpdb->prefix . 'rxg_smi_semantic_similarities';
+        $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+        $table_links = $wpdb->prefix . 'rxg_smi_links';
+        
+        // Pages avec haute similarité sémantique mais sans liens
+        $high_similarity_pages = $wpdb->get_results("
+            SELECT p1.id as page1_id, p1.title as page1_title, 
+                   p2.id as page2_id, p2.title as page2_title,
+                   s.similarity
+            FROM $table_semantic_similarities s
+            INNER JOIN $table_pages p1 ON p1.id = s.page_id_1
+            INNER JOIN $table_pages p2 ON p2.id = s.page_id_2
+            WHERE s.similarity > 0.6
+            AND NOT EXISTS (
+                SELECT 1 FROM $table_links l 
+                WHERE (l.source_id = s.page_id_1 AND l.target_id = s.page_id_2)
+                   OR (l.source_id = s.page_id_2 AND l.target_id = s.page_id_1)
+            )
+            ORDER BY s.similarity DESC
+            LIMIT 20
+        ");
+        
+        // Clusters thématiques
+        $thematic_clusters = $this->semantic_analyzer->get_thematic_clusters();
+        
+        // Inclure le template
+        include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-semantic.php';
+    }
+}
+
+/**
+ * Gère l'analyse sémantique manuelle
+ */
+public function handle_semantic_analysis() {
+    // Vérifier les autorisations
+    if (!current_user_can('manage_options')) {
+        wp_die(__('Vous n\'avez pas les autorisations nécessaires pour effectuer cette action.', 'rxg-smi'));
+    }
     
-//     // Sous-menu: Pages
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Pages', 'rxg-smi'),
-//         __('Pages', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-pages',
-//         array($this, 'display_plugin_pages')
-//     );
+    // Vérifier le nonce
+    check_admin_referer('rxg_smi_semantic_analysis', 'rxg_smi_nonce');
     
-//     // Sous-menu: Liens
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Liens', 'rxg-smi'),
-//         __('Liens', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-links',
-//         array($this, 'display_plugin_links')
-//     );
+    // Lancer l'analyse
+    $count = $this->semantic_analyzer->analyze_site_content();
     
-//     // Sous-menu: Hiérarchie (Nouveau)
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Hiérarchie', 'rxg-smi'),
-//         __('Hiérarchie', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-hierarchy',
-//         array($this, 'display_plugin_hierarchy')
-//     );
-    
-//     // Sous-menu: Taxonomies (Nouveau)
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Taxonomies', 'rxg-smi'),
-//         __('Taxonomies', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-taxonomies',
-//         array($this, 'display_plugin_taxonomies')
-//     );
-    
-//     // Sous-menu: Ancres (Nouveau)
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Textes d\'ancre', 'rxg-smi'),
-//         __('Textes d\'ancre', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-anchors',
-//         array($this, 'display_plugin_anchors')
-//     );
-    
-//     // Sous-menu: Opportunités (Nouveau)
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Opportunités', 'rxg-smi'),
-//         __('Opportunités', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-opportunities',
-//         array($this, 'display_plugin_opportunities')
-//     );
-    
-//     // Sous-menu: Paramètres
-//     add_submenu_page(
-//         'rxg-smi',
-//         __('Paramètres', 'rxg-smi'),
-//         __('Paramètres', 'rxg-smi'),
-//         'manage_options',
-//         'rxg-smi-settings',
-//         array($this, 'display_plugin_settings')
-//     );
-// }
+    // Rediriger avec un message
+    wp_redirect(add_query_arg(
+        array(
+            'page' => 'rxg-smi-semantic',
+            'analyzed' => 1,
+            'count' => $count
+        ),
+        admin_url('admin.php')
+    ));
+    exit;
+}
 
     /**
      * Affiche la liste des pages

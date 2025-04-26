@@ -27,6 +27,7 @@ require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-hierarchy-analyzer.php
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-taxonomy-analyzer.php';
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-anchor-analyzer.php';
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-content-analyzer.php';
+require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-semantic-analyzer.php'; // Nouveau !
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-crawler.php';
 require_once RXG_SMI_PLUGIN_DIR . 'admin/class-rxg-smi-admin.php';
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-ajax.php';
@@ -44,15 +45,16 @@ function rxg_smi_init() {
     $taxonomy_analyzer = new RXG_SMI_Taxonomy_Analyzer($db);
     $anchor_analyzer = new RXG_SMI_Anchor_Analyzer($db);
     $content_analyzer = new RXG_SMI_Content_Analyzer($db);
+    $semantic_analyzer = new RXG_SMI_Semantic_Analyzer($db); // Nouveau !
     
     // Initialiser le crawler avec les analyseurs
     $crawler = new RXG_SMI_Crawler($db, $hierarchy_analyzer, $taxonomy_analyzer, $anchor_analyzer, $content_analyzer);
     
     // Initialiser l'interface d'administration
-    $admin = new RXG_SMI_Admin($crawler, $db, $hierarchy_analyzer, $taxonomy_analyzer, $anchor_analyzer, $content_analyzer);
+    $admin = new RXG_SMI_Admin($crawler, $db, $hierarchy_analyzer, $taxonomy_analyzer, $anchor_analyzer, $content_analyzer, $semantic_analyzer);
     
     // Initialiser le gestionnaire AJAX
-    rxg_smi_init_ajax_handler($db, $taxonomy_analyzer, $anchor_analyzer);
+    rxg_smi_init_ajax_handler($db, $taxonomy_analyzer, $anchor_analyzer, $semantic_analyzer);
     
     // Enregistrer les hooks d'administration
     add_action('admin_menu', array($admin, 'add_plugin_admin_menu'));
@@ -61,6 +63,9 @@ function rxg_smi_init() {
     
     // Hook pour l'action d'analyse manuelle
     add_action('admin_post_rxg_smi_analyze_site', array($admin, 'handle_manual_analysis'));
+    
+    // Nouveau hook pour l'analyse sémantique
+    add_action('admin_post_rxg_smi_semantic_analysis', array($admin, 'handle_semantic_analysis'));
     
     // Planifier l'analyse du site
     if (!wp_next_scheduled('rxg_smi_daily_analysis')) {
@@ -71,7 +76,17 @@ function rxg_smi_init() {
     }
     
     add_action('rxg_smi_daily_analysis', array($crawler, 'analyze_site'));
+    
+    // Ajouter un hook pour l'analyse sémantique
+    add_action('rxg_smi_semantic_analysis', array($semantic_analyzer, 'analyze_site_content'));
+    
+    // Planifier l'analyse sémantique après l'analyse du site
+    add_action('rxg_smi_daily_analysis', function() {
+        // Planifier l'analyse sémantique 5 minutes après l'analyse du site
+        wp_schedule_single_event(time() + 300, 'rxg_smi_semantic_analysis');
+    });
 }
+
 /**
  * Fonction exécutée lors de l'activation du plugin
  */
@@ -97,6 +112,15 @@ function rxg_smi_load_textdomain() {
     load_plugin_textdomain('rxg-smi', false, dirname(plugin_basename(__FILE__)) . '/languages');
 }
 add_action('plugins_loaded', 'rxg_smi_load_textdomain');
+
+/**
+ * Fonction utilitaire pour récupérer l'ID de post à partir de l'ID de page interne
+ */
+function get_post_id_by_page_id($page_id) {
+    global $wpdb;
+    $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+    return $wpdb->get_var($wpdb->prepare("SELECT post_id FROM $table_pages WHERE id = %d", $page_id));
+}
 
 // Initialisation du plugin
 rxg_smi_init();
