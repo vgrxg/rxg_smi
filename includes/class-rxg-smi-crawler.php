@@ -42,14 +42,16 @@ class RXG_SMI_Crawler {
     /**
      * Constructeur
      */
-public function __construct($crawler, $db, $hierarchy_analyzer = null, $taxonomy_analyzer = null, $anchor_analyzer = null, $content_analyzer = null) {
-    $this->crawler = $crawler;
+public function __construct($db, $hierarchy_analyzer = null, $taxonomy_analyzer = null, $anchor_analyzer = null, $content_analyzer = null) {
     $this->db = $db;
     $this->hierarchy_analyzer = $hierarchy_analyzer;
     $this->taxonomy_analyzer = $taxonomy_analyzer;
     $this->anchor_analyzer = $anchor_analyzer;
     $this->content_analyzer = $content_analyzer;
+    $this->site_url = home_url();
+    $this->post_types = $this->get_post_types_to_analyze();
 }
+
 
     /**
      * Récupère les types de contenu à analyser

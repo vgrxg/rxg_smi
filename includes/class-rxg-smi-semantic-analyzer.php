@@ -64,7 +64,7 @@ class RXG_SMI_Semantic_Analyzer {
     /**
      * Crée les tables nécessaires pour l'analyse sémantique
      */
-    private function create_tables() {
+    public function create_tables() {
         global $wpdb;
         $charset_collate = $wpdb->get_charset_collate();
 
@@ -112,7 +112,6 @@ class RXG_SMI_Semantic_Analyzer {
             dbDelta($query);
         }
     }
-    
     /**
      * Analyse le contenu d'une page
      */

@@ -52,9 +52,7 @@ class RXG_SMI_Admin {
         $this->semantic_analyzer = $semantic_analyzer;
     }
 
-    /**
-     * Ajoute les menus d'administration
-     */
+
 /**
  * Ajoute les menus d'administration
  */
@@ -111,6 +109,26 @@ class RXG_SMI_Admin {
                 array($this, 'display_semantic_analysis')
             );
         }
+                
+        // Sous-menu: Taxonomies
+        add_submenu_page(
+            'rxg-smi',
+            __('Taxonomies', 'rxg-smi'),
+            __('Taxonomies', 'rxg-smi'),
+            'manage_options',
+            'rxg-smi-taxonomies',
+            array($this, 'display_plugin_taxonomies')
+        );
+
+        // Sous-menu: Opportunités
+        add_submenu_page(
+            'rxg-smi',
+            __('Opportunités', 'rxg-smi'),
+            __('Opportunités', 'rxg-smi'),
+            'manage_options',
+            'rxg-smi-opportunities',
+            array($this, 'display_plugin_opportunities')
+        );
         
         // Sous-menu: Paramètres
         add_submenu_page(
@@ -377,6 +395,23 @@ public function handle_semantic_analysis() {
      * Gère l'analyse manuelle du site
      */
     public function handle_manual_analysis() {
+
+        error_log('Début de handle_manual_analysis');
+        
+        // Vérifier les autorisations
+        if (!current_user_can('manage_options')) {
+            error_log('Erreur: permissions insuffisantes');
+            wp_die(__('Vous n\'avez pas les autorisations nécessaires pour effectuer cette action.', 'rxg-smi'));
+        }
+        
+        // Vérifier le nonce
+        if (!isset($_POST['rxg_smi_nonce']) || !wp_verify_nonce($_POST['rxg_smi_nonce'], 'rxg_smi_analyze_site')) {
+            error_log('Erreur: vérification du nonce échouée');
+            wp_die(__('Vérification de sécurité échouée.', 'rxg-smi'));
+        }
+        
+        error_log('Lancement de l\'analyse');
+
         // Vérifier les autorisations
         if (!current_user_can('manage_options')) {
             wp_die(__('Vous n\'avez pas les autorisations nécessaires pour effectuer cette action.', 'rxg-smi'));

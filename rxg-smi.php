@@ -58,8 +58,6 @@ function rxg_smi_init() {
     
     // Enregistrer les hooks d'administration
     add_action('admin_menu', array($admin, 'add_plugin_admin_menu'));
-    add_action('admin_enqueue_scripts', array($admin, 'enqueue_admin_styles'));
-    add_action('admin_enqueue_scripts', array($admin, 'enqueue_admin_scripts'));
     
     // Hook pour l'action d'analyse manuelle
     add_action('admin_post_rxg_smi_analyze_site', array($admin, 'handle_manual_analysis'));
