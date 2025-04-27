@@ -70,6 +70,7 @@
             echo '<p>' . __('Aucune analyse automatique n\'est planifiée.', 'rxg-smi') . '</p>';
         }
         ?>
+        <?php do_action('rxg_smi_dashboard_after_status'); ?>
     </div>
     
     <!-- Nouvelles statistiques Phase 2 -->

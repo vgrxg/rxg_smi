@@ -1,0 +1,254 @@
+/**
+ * Styles pour la page de visualisation et export
+ */
+
+/* Onglets */
+.rxg-smi-tabs {
+    margin-top: 20px;
+}
+
+.rxg-smi-tabs .nav-tab-wrapper {
+    margin-bottom: 20px;
+}
+
+.tab-content {
+    background: #fff;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Visualisation */
+.rxg-smi-visualization-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.rxg-smi-visualization-header h2 {
+    margin: 0;
+}
+
+.rxg-smi-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.rxg-smi-visualization-container {
+    background: #f8f9fa;
+    border-radius: 5px;
+    padding: 15px;
+    margin-bottom: 20px;
+    position: relative;
+    min-height: 600px;
+}
+
+.rxg-smi-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(248, 249, 250, 0.7);
+    z-index: 10;
+}
+
+.rxg-smi-loading .spinner {
+    float: none;
+    margin: 0 auto 10px;
+}
+
+#rxg-smi-graph {
+    width: 100%;
+    height: 600px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    border-radius: 5px;
+    background: #fff;
+}
+
+#rxg-smi-graph svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+    cursor: move;
+}
+
+/* Légende */
+.rxg-smi-legend {
+    margin-bottom: 20px;
+    padding: 15px;
+    background: #fff;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rxg-smi-legend h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+.rxg-smi-cluster-legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.rxg-smi-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+}
+
+.rxg-smi-legend-symbol {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    background-color: #ddd;
+}
+
+.rxg-smi-node-large {
+    width: 20px;
+    height: 20px;
+    background-color: #2271b1;
+}
+
+.rxg-smi-node-small {
+    width: 10px;
+    height: 10px;
+    background-color: #2271b1;
+}
+
+/* Détails de page */
+.rxg-smi-selected-page {
+    background: #fff;
+    padding: 15px;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.rxg-smi-selected-page h3 {
+    margin-top: 0;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+
+#rxg-smi-page-details {
+    padding: 10px;
+    background: #f8f9fa;
+    border-radius: 3px;
+}
+
+/* Options d'export */
+.rxg-smi-export-options {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.rxg-smi-export-option {
+    flex: 1;
+    min-width: 250px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 4px solid #2271b1;
+}
+
+.rxg-smi-export-option h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.rxg-smi-export-option p {
+    margin-bottom: 15px;
+}
+
+.rxg-smi-export-option .dashicons {
+    margin-top: 4px;
+}
+
+/* Guide */
+.rxg-smi-guide-section {
+    margin-bottom: 30px;
+}
+
+.rxg-smi-guide-section h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.rxg-smi-interpretation-tips {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.rxg-smi-tip {
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 5px;
+    border-left: 3px solid #2271b1;
+}
+
+.rxg-smi-tip h4 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: #2271b1;
+}
+
+.rxg-smi-tip p {
+    margin-bottom: 10px;
+}
+
+.rxg-smi-tip-action {
+    padding: 8px;
+    background: #eaf6fd;
+    border-radius: 3px;
+    color: #2271b1;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+/* Responsive */
+@media screen and (max-width: 782px) {
+    .rxg-smi-visualization-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .rxg-smi-controls {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .rxg-smi-visualization-container {
+        height: 400px;
+    }
+    
+    #rxg-smi-graph {
+        height: 400px;
+    }
+    
+    .rxg-smi-export-option {
+        flex: 100%;
+    }
+}

@@ -31,7 +31,8 @@ require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-semantic-analyzer.php'
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-crawler.php';
 require_once RXG_SMI_PLUGIN_DIR . 'admin/class-rxg-smi-admin.php';
 require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-ajax.php';
-
+require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-exporter.php';
+require_once RXG_SMI_PLUGIN_DIR . 'includes/class-rxg-smi-visualization.php';
 
 /**
  * Démarre le plugin
@@ -83,6 +84,14 @@ function rxg_smi_init() {
         // Planifier l'analyse sémantique 5 minutes après l'analyse du site
         wp_schedule_single_event(time() + 300, 'rxg_smi_semantic_analysis');
     });
+    // Initialiser l'exportateur et la visualisation
+    $exporter = new RXG_SMI_Exporter($db);
+    $visualization = new RXG_SMI_Visualization($db, $exporter);
+
+    // Ajouter les actions pour l'export et la visualisation
+    add_action('admin_post_rxg_smi_export_json', array($exporter, 'handle_export_request'));
+    add_action('admin_post_rxg_smi_export_csv', array($visualization, 'export_csv'));
+    add_action('wp_ajax_rxg_smi_get_visualization_data', array($visualization, 'get_visualization_data'));  
 }
 
 /**
