@@ -21,11 +21,9 @@ class RXG_SMI_Visualization {
         $this->db = $db;
         $this->exporter = $exporter;
         
-        // Ajouter le menu
         add_action('admin_menu', array($this, 'add_visualization_menu'));
-        
-        // Ajouter les scripts et styles
         add_action('admin_enqueue_scripts', array($this, 'enqueue_visualization_scripts'));
+        add_action('wp_ajax_rxg_smi_get_visualization_data', array($this, 'get_visualization_data'));
     }
     
     /**
@@ -46,7 +44,8 @@ class RXG_SMI_Visualization {
      * Charge les scripts pour la visualisation
      */
     public function enqueue_visualization_scripts($hook) {
-        if ($hook !== 'rxg-smi_page_rxg-smi-visualization') {
+        // La condition peut être incorrecte, essayons d'être plus permissif
+        if (strpos($hook, 'rxg-smi-visualization') === false) {
             return;
         }
         
@@ -59,12 +58,12 @@ class RXG_SMI_Visualization {
             true
         );
         
-        // Script personnalisé pour la visualisation
+        // Avec le script modifié, essayons à nouveau
         wp_enqueue_script(
             'rxg-smi-visualization',
             RXG_SMI_PLUGIN_URL . 'admin/js/rxg-smi-visualization.js',
             array('jquery', 'rxg-smi-d3'),
-            RXG_SMI_VERSION,
+            RXG_SMI_VERSION . '.' . time(), // Ajouter un timestamp pour forcer le rechargement
             true
         );
         
@@ -75,7 +74,7 @@ class RXG_SMI_Visualization {
             array(
                 'ajaxUrl' => admin_url('admin-ajax.php'),
                 'nonce' => wp_create_nonce('rxg-smi-visualization'),
-                'adminUrl' => admin_url('admin.php'), // Ajoutez cette ligne
+                'adminUrl' => admin_url('admin.php'),
                 'exportUrl' => wp_nonce_url(admin_url('admin-post.php?action=rxg_smi_export_json'), 'rxg_smi_export', 'rxg_smi_nonce'),
                 'exportCsvUrl' => wp_nonce_url(admin_url('admin-post.php?action=rxg_smi_export_csv'), 'rxg_smi_export_csv', 'rxg_smi_nonce'),
                 'i18n' => array(
@@ -92,7 +91,7 @@ class RXG_SMI_Visualization {
             RXG_SMI_VERSION
         );
     }
-    
+
     /**
      * Affiche la page de visualisation
      */
@@ -126,6 +125,16 @@ class RXG_SMI_Visualization {
         
         // Récupérer les données via l'exportateur
         $data = json_decode($this->exporter->export_maillage_json(), true);
+        
+        // Vérifier et corriger le format des liens
+        if (isset($data['links']) && !is_array($data['links'])) {
+            // Si links est un objet, le convertir en tableau
+            $links_array = array();
+            foreach ($data['links'] as $link) {
+                $links_array[] = $link;
+            }
+            $data['links'] = $links_array;
+        }
         
         // Limiter la taille des données pour éviter de surcharger le navigateur
         if (count($data['pages']) > 100) {

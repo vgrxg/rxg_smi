@@ -100,7 +100,7 @@ class RXG_SMI_Exporter {
         }
         
         // Formater les liens
-        $formatted_links = [];
+        $formatted_links = array();
         foreach ($links as $link) {
             $formatted_links[] = [
                 'source' => intval($link->source_id),

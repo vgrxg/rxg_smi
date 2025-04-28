@@ -48,7 +48,7 @@
 
     // Initialisation D3
     function initVisualization() {
-    $('#rxg-smi-loading').hide();
+    $('#rxg-smi-loading').show();
     $('#rxg-smi-graph').html(
         '<div class="rxg-smi-no-data">' +
         '<p>Aucune donnée chargée. Veuillez d\'abord analyser votre site pour générer des données.</p>' +
@@ -100,11 +100,13 @@
         
         // Charger les données
         loadData(g);
-    }
+        }); 
+    }  
     
     // Chargement des données
     function loadData(g) {
         $('#rxg-smi-loading').show();
+        console.log('Chargement des données via AJAX...');
         
         $.ajax({
             url: rxgSmiData.ajaxUrl,
@@ -114,23 +116,39 @@
                 nonce: rxgSmiData.nonce
             },
             success: function(response) {
+                console.log('Réponse reçue:', response);
                 if (response.success) {
                     $('#rxg-smi-loading').hide();
-                    
+                                        
                     graph = response.data;
+
+                    // Protection contre mauvaise structure
+                    if (!graph.links || typeof graph.links !== 'object') {
+                        graph.links = [];
+                    }
+                    if (!Array.isArray(graph.links)) {
+                        var linksArray = [];
+                        for (var key in graph.links) {
+                            if (graph.links.hasOwnProperty(key)) {
+                                linksArray.push(graph.links[key]);
+                            }
+                        }
+                        graph.links = linksArray;
+                    }
+
                     nodes = graph.pages.map(d => Object.create(d));
                     links = graph.links.map(d => Object.create(d));
+
                     
-                    // Initialiser les filtres
                     initFilters();
-                    
-                    // Créer la visualisation
                     createVisualization(g);
                 } else {
+                    console.error('Erreur dans la réponse:', response);
                     $('#rxg-smi-loading').html('<p class="error">' + response.data.message + '</p>');
                 }
             },
-            error: function() {
+            error: function(xhr, status, error) {
+                console.error('Erreur AJAX:', status, error, xhr.responseText);
                 $('#rxg-smi-loading').html('<p class="error">' + rxgSmiData.i18n.error + '</p>');
             }
         });
