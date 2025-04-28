@@ -149,6 +149,263 @@ class RXG_SMI_Admin {
             array($this, 'display_plugin_documentation')
         );
 
+        // Sous-menu: Vue de Cluster (caché du menu principal)
+        add_submenu_page(
+            null, // Pas de parent = page cachée du menu
+            __('Vue de Cluster', 'rxg-smi'),
+            __('Vue de Cluster', 'rxg-smi'),
+            'manage_options',
+            'rxg-smi-cluster-view',
+            array($this, 'display_cluster_view')
+        );
+
+        // Sous-menu: Vue de Terme (caché du menu principal)
+        add_submenu_page(
+            null, // Pas de parent = page cachée du menu
+            __('Vue de Terme', 'rxg-smi'),
+            __('Vue de Terme', 'rxg-smi'),
+            'manage_options',
+            'rxg-smi-term-view',
+            array($this, 'display_term_view')
+        );
+    }
+
+
+    /**
+     * Affiche la vue détaillée d'un terme sémantique
+     */
+    public function display_term_view() {
+        global $wpdb;
+        
+        // Récupérer le terme demandé
+        $term = isset($_GET['term']) ? sanitize_text_field($_GET['term']) : '';
+        
+        if (empty($term)) {
+            echo '<div class="notice notice-error"><p>' . __('Terme non spécifié.', 'rxg-smi') . '</p></div>';
+            return;
+        }
+        
+        // Tables
+        $table_semantic_terms = $wpdb->prefix . 'rxg_smi_semantic_terms';
+        $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+        $table_semantic_clusters = $wpdb->prefix . 'rxg_smi_semantic_clusters';
+        
+        // Récupérer toutes les occurrences de ce terme
+        $original_occurrences = $wpdb->get_results($wpdb->prepare(
+            "SELECT t.*, p.title, p.url, p.post_id, p.post_type 
+            FROM $table_semantic_terms t
+            INNER JOIN $table_pages p ON t.page_id = p.id
+            WHERE t.term = %s
+            ORDER BY t.weight DESC",
+            $term
+        ));
+        
+        // Formater les occurrences et récupérer le contexte pour chaque page
+        $term_occurrences = array();
+        foreach ($original_occurrences as $occurrence) {
+            $context = $this->get_term_context($occurrence->post_id, $term);
+            
+            $term_occurrences[] = array(
+                'id' => $occurrence->page_id,
+                'post_id' => $occurrence->post_id,
+                'title' => $occurrence->title,
+                'url' => $occurrence->url,
+                'post_type' => $occurrence->post_type,
+                'count' => $occurrence->count,
+                'weight' => $occurrence->weight,
+                'context' => $context
+            );
+        }
+        
+        // Récupérer les termes similaires (co-occurrences)
+        $similar_terms = array();
+        if (!empty($original_occurrences)) {
+            $page_ids = array();
+            foreach ($original_occurrences as $occurrence) {
+                $page_ids[] = $occurrence->page_id;
+            }
+            
+            if (!empty($page_ids)) {
+                $page_ids_str = implode(',', array_map('intval', $page_ids));
+                
+                $similar_terms_query = "
+                    SELECT term, COUNT(DISTINCT page_id) as count
+                    FROM $table_semantic_terms
+                    WHERE page_id IN ($page_ids_str) AND term != %s
+                    GROUP BY term
+                    ORDER BY count DESC
+                    LIMIT 15
+                ";
+                
+                $similar_terms_results = $wpdb->get_results($wpdb->prepare($similar_terms_query, $term));
+                
+                foreach ($similar_terms_results as $similar) {
+                    $similar_terms[] = array(
+                        'term' => $similar->term,
+                        'count' => $similar->count
+                    );
+                }
+            }
+        }
+        
+        // Récupérer les clusters où ce terme est significatif
+        $clusters = array();
+        
+        // D'abord, identifier les clusters qui contiennent des pages avec ce terme
+        $cluster_ids_query = "
+            SELECT DISTINCT c.cluster_id
+            FROM $table_semantic_clusters c
+            INNER JOIN $table_semantic_terms t ON c.page_id = t.page_id
+            WHERE t.term = %s
+        ";
+        
+        $cluster_ids = $wpdb->get_col($wpdb->prepare($cluster_ids_query, $term));
+        
+        foreach ($cluster_ids as $cluster_id) {
+            // Compter les pages dans ce cluster
+            $page_count = $wpdb->get_var($wpdb->prepare(
+                "SELECT COUNT(DISTINCT page_id) FROM $table_semantic_clusters WHERE cluster_id = %d",
+                $cluster_id
+            ));
+            
+            // Calculer le poids total du terme dans ce cluster
+            $term_weight = $wpdb->get_var($wpdb->prepare(
+                "SELECT SUM(t.weight) 
+                FROM $table_semantic_terms t
+                INNER JOIN $table_semantic_clusters c ON t.page_id = c.page_id
+                WHERE c.cluster_id = %d AND t.term = %s",
+                $cluster_id, $term
+            ));
+            
+            // Récupérer les principaux termes du cluster
+            $cluster_terms = $wpdb->get_col($wpdb->prepare(
+                "SELECT DISTINCT t.term
+                FROM $table_semantic_terms t
+                INNER JOIN $table_semantic_clusters c ON t.page_id = c.page_id
+                WHERE c.cluster_id = %d AND t.term != %s
+                ORDER BY t.weight DESC
+                LIMIT 5",
+                $cluster_id, $term
+            ));
+            
+            $clusters[] = array(
+                'id' => $cluster_id,
+                'page_count' => $page_count,
+                'term_weight' => $term_weight,
+                'terms' => $cluster_terms
+            );
+        }
+        
+        // Trier les clusters par poids du terme (décroissant)
+        usort($clusters, function($a, $b) {
+            return $b['term_weight'] <=> $a['term_weight'];
+        });
+        
+        // Limiter à 5 clusters les plus pertinents
+        $clusters = array_slice($clusters, 0, 5);
+        
+        // Inclure le template
+        include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-term-view.php';
+    }
+
+    /**
+     * Extrait le contexte d'un terme dans le contenu d'un post
+     * 
+     * @param int $post_id ID du post
+     * @param string $term Terme à rechercher
+     * @param int $context_length Nombre de mots de contexte avant et après
+     * @param int $max_excerpts Nombre maximum d'extraits à retourner
+     * @return array Tableau d'extraits HTML avec le terme marqué
+     */
+    private function get_term_context($post_id, $term, $context_length = 5, $max_excerpts = 3) {
+        $post = get_post($post_id);
+        if (!$post) {
+            return array();
+        }
+        
+        // Récupérer le contenu complet
+        $content = wp_strip_all_tags($post->post_content);
+        $title = $post->post_title;
+        $excerpt = $post->post_excerpt;
+        
+        // Combiner le contenu pour la recherche
+        $all_content = $title . "\n" . $excerpt . "\n" . $content;
+        
+        // Normaliser le contenu (supprimer les sauts de ligne excessifs, etc.)
+        $all_content = preg_replace('/\s+/', ' ', $all_content);
+        
+        // Pattern pour trouver le terme avec du contexte autour
+        $term_pattern = '/(\S+\s+){0,' . $context_length . '}' . preg_quote($term, '/') . '(\s+\S+){0,' . $context_length . '}/ui';
+        
+        $matches = array();
+        $excerpts = array();
+        
+        if (preg_match_all($term_pattern, $all_content, $matches, PREG_PATTERN_ORDER)) {
+            // Pour chaque occurrence trouvée
+            foreach ($matches[0] as $match) {
+                // Nettoyer l'extrait
+                $excerpt = trim($match);
+                
+                // Marquer le terme
+                $excerpt = preg_replace('/(' . preg_quote($term, '/') . ')/ui', '<mark>$1</mark>', $excerpt);
+                
+                // Ajouter l'extrait à la liste
+                $excerpts[] = '...' . $excerpt . '...';
+                
+                // Limiter le nombre d'extraits
+                if (count($excerpts) >= $max_excerpts) {
+                    break;
+                }
+            }
+        }
+        
+        return $excerpts;
+    }
+
+
+    /**
+     * Affiche la vue détaillée d'un cluster
+     */
+    public function display_cluster_view() {
+        global $wpdb;
+        
+        // Récupérer l'ID du cluster demandé
+        $cluster_id = isset($_GET['cluster_id']) ? intval($_GET['cluster_id']) : 0;
+        
+        if ($cluster_id <= 0) {
+            echo '<div class="notice notice-error"><p>' . __('ID de cluster non spécifié ou invalide.', 'rxg-smi') . '</p></div>';
+            return;
+        }
+        
+        // Tables
+        $table_semantic_clusters = $wpdb->prefix . 'rxg_smi_semantic_clusters';
+        $table_pages = $wpdb->prefix . 'rxg_smi_pages';
+        $table_semantic_terms = $wpdb->prefix . 'rxg_smi_semantic_terms';
+        
+        // Récupérer toutes les pages de ce cluster
+        $cluster_pages = $wpdb->get_results($wpdb->prepare(
+            "SELECT p.* 
+            FROM $table_pages p
+            INNER JOIN $table_semantic_clusters c ON p.id = c.page_id
+            WHERE c.cluster_id = %d
+            ORDER BY p.juice_score DESC",
+            $cluster_id
+        ));
+        
+        // Récupérer les termes les plus représentatifs du cluster
+        $cluster_terms = $wpdb->get_results($wpdb->prepare(
+            "SELECT t.term, SUM(t.weight) as total_weight
+            FROM $table_semantic_terms t
+            INNER JOIN $table_semantic_clusters c ON t.page_id = c.page_id
+            WHERE c.cluster_id = %d
+            GROUP BY t.term
+            ORDER BY total_weight DESC
+            LIMIT 20",
+            $cluster_id
+        ));
+        
+        // Inclure le template
+        include_once RXG_SMI_PLUGIN_DIR . 'admin/partials/rxg-smi-admin-cluster-view.php';
     }
 
 

@@ -174,8 +174,10 @@
                         $size = 6 - $size; // Inverser pour que les plus importants soient plus grands
                     ?>
                         <span class="rxg-smi-cloud-term rxg-smi-term-size-<?php echo $size; ?>">
-                            <?php echo esc_html($term->term); ?>
-                            <span class="rxg-smi-term-count">(<?php echo intval($term->page_count); ?>)</span>
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=rxg-smi-term-view&term=' . urlencode($term->term))); ?>">
+                                <?php echo esc_html($term->term); ?>
+                                <span class="rxg-smi-term-count">(<?php echo intval($term->page_count); ?>)</span>
+                            </a>
                         </span>
                     <?php endforeach; ?>
                 </div>

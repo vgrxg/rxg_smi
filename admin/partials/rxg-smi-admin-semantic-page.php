@@ -44,7 +44,9 @@
                 <div class="rxg-smi-semantic-terms">
                     <?php foreach ($semantic_terms as $term) : ?>
                         <div class="rxg-smi-semantic-term">
-                            <span class="rxg-smi-term-text"><?php echo esc_html($term->term); ?></span>
+                            <a href="<?php echo esc_url(admin_url('admin.php?page=rxg-smi-term-view&term=' . urlencode($term->term))); ?>">
+                                <span class="rxg-smi-term-text"><?php echo esc_html($term->term); ?></span>
+                            </a>
                             <div class="rxg-smi-term-weight-bar">
                                 <div class="rxg-smi-term-weight-fill" style="width: <?php echo min(100, $term->weight * 20); ?>%"></div>
                             </div>

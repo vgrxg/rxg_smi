@@ -7,27 +7,30 @@
     <h1><?php echo esc_html(get_admin_page_title()); ?></h1>
     
     <div class="rxg-smi-filters">
-        <div class="rxg-smi-filter">
-            <label for="rxg-smi-page-filter"><?php _e('Sélectionner une page:', 'rxg-smi'); ?></label>
-            <select id="rxg-smi-page-filter" name="page_id">
-                <option value=""><?php _e('-- Choisir une page --', 'rxg-smi'); ?></option>
-                <?php foreach ($pages as $p) : ?>
-                    <option value="<?php echo intval($p->id); ?>" <?php selected($page_id, $p->id); ?>>
-                        <?php echo esc_html($p->title); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        </div>
-        
-        <?php if ($page_id) : ?>
+        <form method="get" action="">
+            <input type="hidden" name="page" value="rxg-smi-links">
             <div class="rxg-smi-filter">
-                <label for="rxg-smi-link-direction"><?php _e('Direction:', 'rxg-smi'); ?></label>
-                <select id="rxg-smi-link-direction" name="direction" onchange="this.form.submit()">
-                    <option value="outbound" <?php selected($direction, 'outbound'); ?>><?php _e('Liens sortants', 'rxg-smi'); ?></option>
-                    <option value="inbound" <?php selected($direction, 'inbound'); ?>><?php _e('Liens entrants', 'rxg-smi'); ?></option>
+                <label for="rxg-smi-page-filter"><?php _e('Sélectionner une page:', 'rxg-smi'); ?></label>
+                <select id="rxg-smi-page-filter" name="page_id" onchange="this.form.submit()">
+                    <option value=""><?php _e('-- Choisir une page --', 'rxg-smi'); ?></option>
+                    <?php foreach ($pages as $p) : ?>
+                        <option value="<?php echo intval($p->id); ?>" <?php selected($page_id, $p->id); ?>>
+                            <?php echo esc_html($p->title); ?>
+                        </option>
+                    <?php endforeach; ?>
                 </select>
             </div>
-        <?php endif; ?>
+            
+            <?php if ($page_id) : ?>
+                <div class="rxg-smi-filter">
+                    <label for="rxg-smi-link-direction"><?php _e('Direction:', 'rxg-smi'); ?></label>
+                    <select id="rxg-smi-link-direction" name="direction" onchange="this.form.submit()">
+                        <option value="outbound" <?php selected($direction, 'outbound'); ?>><?php _e('Liens sortants', 'rxg-smi'); ?></option>
+                        <option value="inbound" <?php selected($direction, 'inbound'); ?>><?php _e('Liens entrants', 'rxg-smi'); ?></option>
+                    </select>
+                </div>
+            <?php endif; ?>
+        </form>
     </div>
     
     <?php if ($page_id) : ?>
