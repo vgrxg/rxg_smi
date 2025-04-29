@@ -6,15 +6,17 @@
     // Déclarer appel initial
     $(document).ready(function() {
         console.log("Initialisation automatique de la visualisation");
+        // Masquer l'indicateur de chargement au départ
+        $('#rxg-smi-loading').hide();
+        
         // Vérifier si l'élément existe
         if ($('#rxg-smi-graph').length) {
-            // Démarrer le chargement automatiquement
-            if ($('#tab-visualization').is(':visible')) {
+            // Forcer l'initialisation après un court délai, peu importe l'onglet actif
+            setTimeout(function() {
                 $('#rxg-smi-generate-viz').trigger('click');
-            }
+            }, 500);
         }
     });
-    
     'use strict';
     
     // Variables principales
