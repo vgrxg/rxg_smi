@@ -41,14 +41,14 @@
                     </select>
                 </div>
             </div>
-            
+
             <div class="rxg-smi-visualization-container">
                 <div id="rxg-smi-loading" class="rxg-smi-loading">
                     <span class="spinner is-active"></span>
                     <p><?php _e('Chargement des données...', 'rxg-smi'); ?></p>
                 </div>
                 <div id="rxg-smi-graph"></div>
-                <button id="rxg-smi-generate-viz" class="button button-primary" style="margin-top:15px;">
+                <button id="rxg-smi-generate-viz" class="button button-primary" style="margin-top:15px; display:block;">
                     <?php _e('Générer la visualisation', 'rxg-smi'); ?>
                 </button>
             </div>
@@ -86,6 +86,45 @@
             <!-- Contenu inchangé... -->
         </div>
     </div>
+
+<!-- Élément de débogage -->
+<div id="rxg-smi-debug" style="margin-top:20px; border:1px solid #ccc; padding:10px; display:none;">
+    <h3>Informations de débogage</h3>
+    <button id="rxg-smi-test-ajax" class="button">Tester AJAX</button>
+    <div id="rxg-smi-debug-output"></div>
+</div>
+
+<script>
+jQuery(document).ready(function($) {
+    // Afficher la section de débogage si mode debug actif
+    if (typeof rxgSmiData !== 'undefined' && rxgSmiData.debugMode) {
+        $('#rxg-smi-debug').show();
+        $('#rxg-smi-debug-output').append('<p>JavaScript fonctionne! ' + new Date().toLocaleTimeString() + '</p>');
+    
+        $('#rxg-smi-test-ajax').on('click', function() {
+            $('#rxg-smi-debug-output').append('<p>Test AJAX en cours...</p>');
+            
+            $.ajax({
+                url: rxgSmiData.ajaxUrl,
+                type: 'POST',
+                data: {
+                    action: 'rxg_smi_get_visualization_data',
+                    nonce: rxgSmiData.nonce
+                },
+                success: function(response) {
+                    $('#rxg-smi-debug-output').append('<p>Réponse AJAX reçue ✓</p>');
+                    console.log('Réponse AJAX:', response);
+                },
+                error: function(xhr, status, error) {
+                    $('#rxg-smi-debug-output').append('<p>Erreur AJAX: ' + error + '</p>');
+                    console.error('Erreur AJAX:', status, error, xhr.responseText);
+                }
+            });
+        });
+    }
+});
+</script>
+
 </div>
 
 <!-- Script de visualisation intégré directement -->

@@ -2,6 +2,19 @@
  * Script D3.js pour la visualisation du maillage interne
  */
 (function($) {
+
+    // Déclarer appel initial
+    $(document).ready(function() {
+        console.log("Initialisation automatique de la visualisation");
+        // Vérifier si l'élément existe
+        if ($('#rxg-smi-graph').length) {
+            // Démarrer le chargement automatiquement
+            if ($('#tab-visualization').is(':visible')) {
+                $('#rxg-smi-generate-viz').trigger('click');
+            }
+        }
+    });
+    
     'use strict';
     
     // Variables principales
@@ -117,39 +130,65 @@
             },
             success: function(response) {
                 console.log('Réponse reçue:', response);
+                
                 if (response.success) {
                     $('#rxg-smi-loading').hide();
-                                        
+                    
                     graph = response.data;
-
-                    // Protection contre mauvaise structure
-                    if (!graph.links || typeof graph.links !== 'object') {
+                    console.log('Structure de graph:', graph);
+                    
+                    // Vérifier la structure des données
+                    if (!graph || !graph.pages || !graph.pages.length) {
+                        $('#rxg-smi-graph').html('<p class="error">Données incomplètes ou vides: pages manquantes</p>');
+                        $('#rxg-smi-generate-viz').prop('disabled', false).text('Réessayer');
+                        return;
+                    }
+                    
+                    // Gérer correctement les liens (partie problématique)
+                    if (!graph.links || !Array.isArray(graph.links) || graph.links.length === 0) {
+                        console.warn('Structure de liens manquante ou vide, création d\'un tableau vide');
                         graph.links = [];
                     }
+                    
+                    // Convertir explicitement en tableau si nécessaire
                     if (!Array.isArray(graph.links)) {
+                        console.warn('Conversion des liens d\'objet en tableau');
                         var linksArray = [];
                         for (var key in graph.links) {
-                            if (graph.links.hasOwnProperty(key)) {
-                                linksArray.push(graph.links[key]);
-                            }
+                            linksArray.push(graph.links[key]);
                         }
                         graph.links = linksArray;
                     }
-
-                    nodes = graph.pages.map(d => Object.create(d));
-                    links = graph.links.map(d => Object.create(d));
-
                     
+                    nodes = graph.pages.map(function(d) {
+                        return Object.create(d);
+                    });
+                    
+                    links = graph.links.map(function(d) {
+                        return Object.create(d);
+                    });
+                    
+                    console.log('Nodes: ', nodes.length);
+                    console.log('Links: ', links.length);
+                    
+                    // Initialiser les filtres
                     initFilters();
+                    
+                    // Créer la visualisation
                     createVisualization(g);
                 } else {
                     console.error('Erreur dans la réponse:', response);
-                    $('#rxg-smi-loading').html('<p class="error">' + response.data.message + '</p>');
+                    $('#rxg-smi-loading').hide();
+                    $('#rxg-smi-graph').html('<p class="error">' + (response.data ? response.data.message : 'Erreur de chargement') + '</p>');
+                    $('#rxg-smi-generate-viz').prop('disabled', false).text('Réessayer');
                 }
             },
             error: function(xhr, status, error) {
-                console.error('Erreur AJAX:', status, error, xhr.responseText);
-                $('#rxg-smi-loading').html('<p class="error">' + rxgSmiData.i18n.error + '</p>');
+                console.error('Erreur AJAX:', status, error);
+                console.log('Détails de l\'erreur:', xhr.responseText);
+                $('#rxg-smi-loading').hide();
+                $('#rxg-smi-graph').html('<p class="error">Erreur lors du chargement des données</p>');
+                $('#rxg-smi-generate-viz').prop('disabled', false).text('Réessayer');
             }
         });
     }
@@ -191,10 +230,18 @@
         
         // Créer la simulation de force
         simulation = d3.forceSimulation(nodes)
-            .force('link', d3.forceLink(links).id(d => d.id))
+            .force('link', d3.forceLink(links).id(function(d) { 
+                return d.id; 
+            }).links(links.filter(function(link) {
+                // Vérifier que source et target existent dans les nœuds
+                return nodes.some(node => node.id === link.source) && 
+                       nodes.some(node => node.id === link.target);
+            })))
             .force('charge', d3.forceManyBody().strength(-200))
             .force('center', d3.forceCenter(width / 2, height / 2))
-            .force('collide', d3.forceCollide().radius(d => getSizeByAttribute(d) + 10));
+            .force('collide', d3.forceCollide().radius(function(d) { 
+                return getSizeByAttribute(d) + 10; 
+            }));
         
         // Créer les liens
         var link = g.append('g')

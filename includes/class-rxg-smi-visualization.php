@@ -44,30 +44,33 @@ class RXG_SMI_Visualization {
      * Charge les scripts pour la visualisation
      */
     public function enqueue_visualization_scripts($hook) {
-        // La condition peut être incorrecte, essayons d'être plus permissif
-        if (strpos($hook, 'rxg-smi-visualization') === false) {
+        // Condition plus permissive pour capturer toutes les pages de visualisation
+        if (strpos($hook, 'rxg-smi-visualization') === false && strpos($hook, 'page=rxg-smi-visualization') === false) {
             return;
         }
+        
+        // Log de débogage (sera visible en console)
+        wp_add_inline_script('jquery', 'console.log("RXG SMI: Scripts en cours de chargement sur hook: ' . esc_js($hook) . '");', 'after');
         
         // D3.js pour les visualisations
         wp_enqueue_script(
             'rxg-smi-d3',
             'https://d3js.org/d3.v7.min.js',
-            array(),
+            array('jquery'),
             '7.0.0',
             true
         );
         
-        // Avec le script modifié, essayons à nouveau
+        // Script de visualisation principal avec timestamp pour forcer le rechargement
         wp_enqueue_script(
             'rxg-smi-visualization',
             RXG_SMI_PLUGIN_URL . 'admin/js/rxg-smi-visualization.js',
             array('jquery', 'rxg-smi-d3'),
-            RXG_SMI_VERSION . '.' . time(), // Ajouter un timestamp pour forcer le rechargement
+            RXG_SMI_VERSION . '.' . time(),
             true
         );
         
-        // Passer les données au script
+        // Passer les données au script (avec toutes les variables d'origine)
         wp_localize_script(
             'rxg-smi-visualization',
             'rxgSmiData',
@@ -79,7 +82,8 @@ class RXG_SMI_Visualization {
                 'exportCsvUrl' => wp_nonce_url(admin_url('admin-post.php?action=rxg_smi_export_csv'), 'rxg_smi_export_csv', 'rxg_smi_nonce'),
                 'i18n' => array(
                     'error' => __('Erreur lors du chargement des données', 'rxg-smi')
-                )
+                ),
+                'debugMode' => true
             )
         );
         
@@ -88,8 +92,16 @@ class RXG_SMI_Visualization {
             'rxg-smi-visualization-style',
             RXG_SMI_PLUGIN_URL . 'admin/css/rxg-smi-visualization.css',
             array(),
-            RXG_SMI_VERSION
+            RXG_SMI_VERSION . '.' . time()
         );
+        
+        // Ajouter un script de débogage
+        wp_add_inline_script('rxg-smi-visualization', '
+            console.log("RXG SMI: Scripts chargés avec succès");
+            jQuery(document).ready(function($) {
+                console.log("RXG SMI: Document ready");
+            });
+        ', 'after');
     }
 
     /**
@@ -150,10 +162,12 @@ class RXG_SMI_Visualization {
             $page_ids = array_map(function($page) {
                 return $page['id'];
             }, $data['pages']);
-            
-            $data['links'] = array_filter($data['links'], function($link) use ($page_ids) {
+
+            // Filtrer les liens pour ne garder que ceux qui référencent des nœuds existants
+            $data['links'] = array_values(array_filter($data['links'], function($link) use ($page_ids) {
+                // S'assurer que source et target existent dans les nœuds filtrés
                 return in_array($link['source'], $page_ids) && in_array($link['target'], $page_ids);
-            });
+            }));
         }
         
         wp_send_json_success($data);
